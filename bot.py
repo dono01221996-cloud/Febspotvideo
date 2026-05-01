@@ -1,12 +1,9 @@
 import time
 import random
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 def run_bot():
     video_links = [
@@ -22,64 +19,70 @@ def run_bot():
         "https://www.febspot.com/video/3189863", "https://www.febspot.com/video/3189864"
     ]
 
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--mute-audio") # Matikan suara agar tidak berat di server
-    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    options = uc.ChromeOptions()
+    options.add_argument('--headless') # Tetap headless untuk GitHub
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--mute-audio')
+    
+    # Menyamarkan identitas browser
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    
+    print("Memulai Browser Stealth...")
+    driver = uc.Chrome(options=options)
 
     try:
+        # Acak daftar video agar tidak berpola sama setiap kali jalan
         random.shuffle(video_links)
         
         for index, link in enumerate(video_links):
-            print(f"[{index+1}/{len(video_links)}] Membuka: {link}")
+            print(f"[{index+1}/{len(video_links)}] Menuju: {link}")
             driver.get(link)
             
             try:
-                # 1. Tunggu elemen video muncul
-                wait = WebDriverWait(driver, 20)
+                # Tunggu video muncul
+                wait = WebDriverWait(driver, 25)
                 video_element = wait.until(EC.presence_of_element_located((By.TAG_NAME, "video")))
                 
-                # 2. Coba jalankan video via JavaScript (Force Play)
+                # Scroll sedikit agar terlihat seperti manusia membaca halaman
+                driver.execute_script("window.scrollTo(0, 300);")
+                time.sleep(2)
+
+                # Paksa play
                 driver.execute_script("arguments[0].play();", video_element)
-                print("Mencoba memutar video...")
+                print("Video diputar.")
 
-                # 3. Loop untuk memantau status video
-                while True:
-                    # Ambil status dari player video
+                # Monitoring durasi
+                start_time = time.time()
+                # Tonton selama 70-90 detik (acak)
+                watch_duration = random.randint(70, 90) 
+                
+                while time.time() - start_time < watch_duration:
                     is_ended = driver.execute_script("return arguments[0].ended;", video_element)
-                    is_paused = driver.execute_script("return arguments[0].paused;", video_element)
-                    current_time = driver.execute_script("return arguments[0].currentTime;", video_element)
-
+                    curr_time = driver.execute_script("return arguments[0].currentTime;", video_element)
+                    
                     if is_ended:
-                        print("Video selesai diputar secara alami.")
+                        print("Video selesai sebelum durasi target.")
                         break
+                        
+                    if int(curr_time) % 20 == 0 and int(curr_time) > 0:
+                        print(f"Status: Menonton detik ke-{int(curr_time)}...")
                     
-                    # Jika video terhenti (paused) tapi belum selesai, coba play lagi
-                    if is_paused and current_time > 0:
-                        driver.execute_script("arguments[0].play();", video_element)
-                    
-                    # Cetak durasi setiap 30 detik agar log GitHub Actions tidak kosong
-                    if int(current_time) % 30 == 0 and int(current_time) > 0:
-                        print(f"Sedang menonton... Durasi saat ini: {int(current_time)} detik")
-                    
-                    time.sleep(5) # Cek setiap 5 detik agar hemat CPU
+                    time.sleep(5)
 
             except Exception as e:
-                print(f"Gagal memutar video ini: {e}")
-                continue # Lanjut ke video berikutnya jika gagal
+                print(f"Gagal memuat video ini, lanjut ke berikutnya...")
             
-            # Beri jeda antar video agar tidak terlihat seperti bot kaku
-            time.sleep(random.randint(5, 10))
+            # Jeda antar video (PENTING agar IP tidak langsung diblokir)
+            jeda = random.randint(15, 30)
+            print(f"Jeda istirahat {jeda} detik...")
+            time.sleep(jeda)
             
     except Exception as e:
-        print(f"Kesalahan Fatal: {e}")
+        print(f"Error Fatal: {e}")
     finally:
+        print("Bot selesai bertugas.")
         driver.quit()
 
 if __name__ == "__main__":
     run_bot()
-
