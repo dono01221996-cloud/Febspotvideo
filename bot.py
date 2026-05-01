@@ -11,9 +11,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 def print_log(text):
+    # Menggunakan flush=True agar log muncul real-time di GitHub Actions
     print(text, flush=True)
 
 def run_bot():
+    # Daftar 50 video terbaru
     video_links = [
         "https://www.febspot.com/video/3181098", "https://www.febspot.com/video/3181099",
         "https://www.febspot.com/video/3181100", "https://www.febspot.com/video/3181101",
@@ -50,81 +52,81 @@ def run_bot():
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
-    chrome_options.add_argument("--window-size=1280,720")
+    chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
 
-    print_log(">>> Menyiapkan Browser...")
+    print_log(">>> Memulai inisialisasi browser...")
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    # Bypass bot detection
+    # Menghapus flag webdriver agar tidak terdeteksi bot
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
         "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     })
 
     try:
-        # CEK IP
+        # CEK IP BROWSER SEBELUM MEMULAI
+        print_log(">>> Mengecek Alamat IP Browser...")
         driver.get("https://api.ipify.org")
-        ip_saat_ini = driver.find_element(By.TAG_NAME, "body").text
-        print_log(f">>> IP BROWSER: {ip_saat_ini}")
+        ip_address = driver.find_element(By.TAG_NAME, "body").text
+        print_log(f">>> ALAMAT IP ANDA SAAT INI: {ip_address}")
+        print_log("-" * 30)
 
+        # Acak urutan video agar tidak terpola
         random.shuffle(video_links)
         
         for index, link in enumerate(video_links):
             print_log(f"\n[{index+1}/{len(video_links)}] Membuka: {link}")
             driver.get(link)
-            time.sleep(7)
+            time.sleep(5) 
             
             try:
                 wait = WebDriverWait(driver, 25)
                 video_element = wait.until(EC.presence_of_element_located((By.TAG_NAME, "video")))
                 
-                # Klik Play
+                # Klik play secara fisik menggunakan ActionChains
                 actions = ActionChains(driver)
                 actions.move_to_element(video_element).click().perform()
-                print_log("Berhasil klik tombol Play.")
+                print_log("Klik Play berhasil dilakukan.")
 
-                # Ambil durasi
+                # Ambil durasi total video
                 duration = driver.execute_script("return arguments[0].duration;", video_element)
                 
                 if duration and duration > 0:
-                    print_log(f"Durasi video: {int(duration)} detik.")
+                    print_log(f"Video terdeteksi. Total Durasi: {int(duration)} detik.")
+                    start_time = time.time()
                     
-                    # Ambil screenshot di awal pemutaran
-                    if index == 0 or index % 10 == 0:
-                        driver.save_screenshot(f"screenshot_{index}.png")
-                        print_log(f"Screenshot disimpan: screenshot_{index}.png")
-
-                    start_watch = time.time()
                     while True:
                         current = driver.execute_script("return arguments[0].currentTime;", video_element)
                         ended = driver.execute_script("return arguments[0].ended;", video_element)
                         
                         if ended or current >= (duration - 1):
-                            print_log("Selesai: Video habis.")
+                            print_log("Konfirmasi: Video selesai ditonton.")
                             break
-                        
-                        if (time.time() - start_watch) > (duration + 15):
-                            print_log("Timeout: Pindah ke video berikutnya.")
+                            
+                        if (time.time() - start_time) > (duration + 30):
+                            print_log("Timeout: Video macet, lanjut ke berikutnya.")
                             break
                             
                         if int(current) % 15 == 0 and int(current) > 0:
-                            print_log(f"Nonton... detik ke-{int(current)}")
+                            print_log(f"Status: Menonton... Detik ke-{int(current)}")
                             
                         time.sleep(5)
                 else:
-                    print_log("Gagal deteksi durasi, tunggu 20 detik...")
-                    time.sleep(20)
+                    print_log("Gagal mengambil durasi, menonton standar 30 detik...")
+                    time.sleep(30)
 
             except Exception as e:
-                print_log("Gagal memuat video ini.")
+                print_log(f"Peringatan: Gagal memuat video.")
             
-            time.sleep(random.randint(5, 8))
+            jeda = random.randint(5, 10)
+            print_log(f"Istirahat sejenak selama {jeda} detik...")
+            time.sleep(jeda)
 
     except Exception as e:
-        print_log(f"ERROR: {e}")
+        print_log(f"KESALAHAN FATAL: {e}")
     finally:
-        print_log("\nSelesai.")
+        print_log("\nSemua link telah diproses. Menutup browser.")
         driver.quit()
 
 if __name__ == "__main__":
