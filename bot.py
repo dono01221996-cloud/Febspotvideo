@@ -10,6 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def run_bot():
     video_links = [
+        # Link dari daftar sebelumnya
         "https://www.febspot.com/video/3189338", "https://www.febspot.com/video/3189741",
         "https://www.febspot.com/video/3189743", "https://www.febspot.com/video/3189744",
         "https://www.febspot.com/video/3189747", "https://www.febspot.com/video/3189748",
@@ -19,87 +20,89 @@ def run_bot():
         "https://www.febspot.com/video/3189849", "https://www.febspot.com/video/3189851",
         "https://www.febspot.com/video/3189857", "https://www.febspot.com/video/3189858",
         "https://www.febspot.com/video/3189860", "https://www.febspot.com/video/3189861",
-        "https://www.febspot.com/video/3189863", "https://www.febspot.com/video/3189864"
+        "https://www.febspot.com/video/3189863", "https://www.febspot.com/video/3189864",
+        # Tambahan link baru
+        "https://www.febspot.com/video/3181098", "https://www.febspot.com/video/3181099",
+        "https://www.febspot.com/video/3181100", "https://www.febspot.com/video/3181101",
+        "https://www.febspot.com/video/3181102", "https://www.febspot.com/video/3181103",
+        "https://www.febspot.com/video/3181104", "https://www.febspot.com/video/3181106",
+        "https://www.febspot.com/video/3181108", "https://www.febspot.com/video/3181109",
+        "https://www.febspot.com/video/3181860", "https://www.febspot.com/video/3181861",
+        "https://www.febspot.com/video/3181863", "https://www.febspot.com/video/3181865",
+        "https://www.febspot.com/video/3181866", "https://www.febspot.com/video/3181867",
+        "https://www.febspot.com/video/3181868", "https://www.febspot.com/video/3182071",
+        "https://www.febspot.com/video/3182072", "https://www.febspot.com/video/3182073",
+        "https://www.febspot.com/video/3182075", "https://www.febspot.com/video/3182076",
+        "https://www.febspot.com/video/3182077", "https://www.febspot.com/video/3182079",
+        "https://www.febspot.com/video/3182080", "https://www.febspot.com/video/3182081",
+        "https://www.febspot.com/video/3182082", "https://www.febspot.com/video/3182083",
+        "https://www.febspot.com/video/3182086", "https://www.febspot.com/video/3182087",
+        "https://www.febspot.com/video/3182089", "https://www.febspot.com/video/3182091",
+        "https://www.febspot.com/video/3182092", "https://www.febspot.com/video/3182093",
+        "https://www.febspot.com/video/3183764", "https://www.febspot.com/video/3183766",
+        "https://www.febspot.com/video/3185499", "https://www.febspot.com/video/3185507",
+        "https://www.febspot.com/video/3185508", "https://www.febspot.com/video/3185510",
+        "https://www.febspot.com/video/3185511", "https://www.febspot.com/video/3185512",
+        "https://www.febspot.com/video/3189317", "https://www.febspot.com/video/3189318",
+        "https://www.febspot.com/video/3189319", "https://www.febspot.com/video/3189320",
+        "https://www.febspot.com/video/3189321", "https://www.febspot.com/video/3189328",
+        "https://www.febspot.com/video/3189329", "https://www.febspot.com/video/3189330"
     ]
 
-    # Konfigurasi Chrome
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--mute-audio")
-    
-    # Penyamaran agar tidak terdeteksi sebagai Bot
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-    # Inisialisasi Driver dengan ChromeDriverManager untuk mengatasi masalah versi 147
-    print("Menginisialisasi WebDriver...")
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    # Menghapus flag 'webdriver' di browser agar lebih 'stealth'
-    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-        "source": """
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            })
-        """
-    })
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
     try:
-        random.shuffle(video_links) # Acak urutan video
+        # Mengacak urutan agar tidak berpola
+        random.shuffle(video_links)
         
         for index, link in enumerate(video_links):
             print(f"[{index+1}/{len(video_links)}] Membuka: {link}")
             driver.get(link)
             
             try:
-                # Tunggu elemen video tersedia
-                wait = WebDriverWait(driver, 30)
+                # 1. Tunggu elemen video muncul
+                wait = WebDriverWait(driver, 20)
                 video_element = wait.until(EC.presence_of_element_located((By.TAG_NAME, "video")))
                 
-                # Simulasi interaksi manusia: scroll sedikit
-                driver.execute_script("window.scrollTo(0, random.randint(200, 500));")
-                time.sleep(2)
-
-                # Paksa play video
+                # 2. Force Play via JavaScript
                 driver.execute_script("arguments[0].play();", video_element)
-                print("Video berhasil diputar (Force Play).")
+                print("Mencoba memutar video...")
 
-                # Pantau durasi nonton (70-95 detik)
-                target_duration = random.randint(70, 95)
-                start_time = time.time()
-                
-                while time.time() - start_time < target_duration:
-                    curr_time = driver.execute_script("return arguments[0].currentTime;", video_element)
+                # 3. Pantau status video
+                while True:
                     is_ended = driver.execute_script("return arguments[0].ended;", video_element)
-                    
+                    is_paused = driver.execute_script("return arguments[0].paused;", video_element)
+                    current_time = driver.execute_script("return arguments[0].currentTime;", video_element)
+
                     if is_ended:
-                        print("Video sudah mencapai akhir.")
+                        print("Video selesai diputar.")
                         break
                     
-                    if int(curr_time) % 30 == 0 and int(curr_time) > 0:
-                        print(f"Laporan: Sedang menonton detik ke-{int(curr_time)}...")
+                    if is_paused and current_time > 0:
+                        driver.execute_script("arguments[0].play();", video_element)
+                    
+                    if int(current_time) % 30 == 0 and int(current_time) > 0:
+                        print(f"Sedang menonton... Durasi: {int(current_time)} detik")
                     
                     time.sleep(5)
-                
-                print(f"Selesai menonton video ini selama {int(time.time() - start_time)} detik.")
 
             except Exception as e:
                 print(f"Gagal memutar video ini: {e}")
+                continue
             
-            # Jeda antar video agar natural
-            break_time = random.randint(10, 20)
-            print(f"Istirahat sejenak {break_time} detik...")
-            time.sleep(break_time)
+            # Jeda antar video
+            time.sleep(random.randint(5, 10))
             
     except Exception as e:
-        print(f"Terjadi kesalahan sistem: {e}")
+        print(f"Kesalahan Fatal: {e}")
     finally:
-        print("Bot selesai. Menutup browser.")
         driver.quit()
 
 if __name__ == "__main__":
