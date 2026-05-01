@@ -1,10 +1,7 @@
-name: Febspot Bot Auto 10 Menit
+name: Febspot Bot Manual Mode
 
 on:
-  schedule:
-    # Cron untuk setiap 10 menit
-    - cron: '*/10 * * * *'
-  workflow_dispatch: # Agar tombol manual tetap ada
+  workflow_dispatch: # Hanya bisa dijalankan secara manual
 
 jobs:
   run-bot:
