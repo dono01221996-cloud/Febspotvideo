@@ -1,9 +1,10 @@
-name: Febspot Bot Automation
+name: Febspot Bot Auto 10 Menit
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Jalan tiap 6 jam
-  workflow_dispatch: # Tombol jalankan manual
+    # Cron untuk setiap 10 menit
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Agar tombol manual tetap ada
 
 jobs:
   run-bot:
