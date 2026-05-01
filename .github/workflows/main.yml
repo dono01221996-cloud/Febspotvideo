@@ -1,9 +1,7 @@
-name: Febspot Bot Automation
+name: Febspot Bot Screenshot Mode
 
 on:
-  schedule:
-    - cron: '0 */6 * * *' # Jalan tiap 6 jam
-  workflow_dispatch: # Tombol jalankan manual
+  workflow_dispatch: # Menjalankan manual dari tombol "Run workflow"
 
 jobs:
   run-bot:
@@ -29,3 +27,10 @@ jobs:
 
       - name: Run bot
         run: python -u bot.py
+
+      - name: Simpan Bukti Screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bukti-tampilan-web
+          path: screenshot_*.png
