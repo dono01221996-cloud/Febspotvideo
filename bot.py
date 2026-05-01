@@ -1,5 +1,6 @@
 import time
 import random
+import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -8,6 +9,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+
+def print_log(text):
+    print(text, flush=True)
 
 def run_bot():
     video_links = [
@@ -34,61 +38,70 @@ def run_bot():
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
 
-    print("Menginisialisasi Browser...")
+    print_log(">>> Memulai inisialisasi browser...")
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    # Hilangkan jejak bot
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    })
 
     try:
         random.shuffle(video_links)
         
         for index, link in enumerate(video_links):
-            print(f"\n[{index+1}/{len(video_links)}] Membuka: {link}")
+            print_log(f"\n[{index+1}/{len(video_links)}] Membuka: {link}")
             driver.get(link)
+            time.sleep(5)
             
             try:
-                # Tunggu player video muncul
-                wait = WebDriverWait(driver, 30)
+                wait = WebDriverWait(driver, 25)
                 video_element = wait.until(EC.presence_of_element_located((By.TAG_NAME, "video")))
                 
-                # Klik untuk memutar
-                ActionChains(driver).move_to_element(video_element).click().perform()
-                time.sleep(3)
+                # Klik play fisik
+                actions = ActionChains(driver)
+                actions.move_to_element(video_element).click().perform()
+                print_log("Klik Play berhasil dilakukan.")
 
-                # Ambil durasi video dari metadata player
-                total_duration = driver.execute_script("return arguments[0].duration;", video_element)
+                # Ambil durasi
+                duration = driver.execute_script("return arguments[0].duration;", video_element)
                 
-                if total_duration and total_duration > 0:
-                    print(f"Deteksi durasi: {int(total_duration)} detik.")
+                if duration and duration > 0:
+                    print_log(f"Video terdeteksi. Durasi: {int(duration)} detik.")
+                    start_time = time.time()
                     
-                    # Pantau video sampai selesai
-                    start_watch = time.time()
                     while True:
-                        current_time = driver.execute_script("return arguments[0].currentTime;", video_element)
-                        is_ended = driver.execute_script("return arguments[0].ended;", video_element)
+                        current = driver.execute_script("return arguments[0].currentTime;", video_element)
+                        ended = driver.execute_script("return arguments[0].ended;", video_element)
                         
-                        # Jika video berakhir atau waktu tonton sudah melebihi durasi video
-                        if is_ended or current_time >= (total_duration - 1):
-                            print("Selesai: Video telah diputar sampai akhir.")
+                        if ended or current >= (duration - 1):
+                            print_log("Konfirmasi: Video Selesai ditonton.")
                             break
-                        
-                        # Keamanan: Jika macet lebih dari durasi asli + 30 detik, paksa stop
-                        if (time.time() - start_watch) > (total_duration + 30):
-                            print("Timeout: Video macet atau terlalu lama, pindah...")
+                            
+                        # Safety timeout jika macet
+                        if (time.time() - start_time) > (duration + 20):
+                            print_log("Timeout: Pindah ke video berikutnya.")
                             break
-
-                        time.sleep(2)
+                            
+                        if int(current) % 15 == 0 and int(current) > 0:
+                            print_log(f"Sedang menonton... Detik ke-{int(current)}")
+                            
+                        time.sleep(5)
                 else:
-                    print("Gagal mendeteksi durasi, menonton manual 30 detik...")
+                    print_log("Gagal ambil durasi, nonton standar 30 detik...")
                     time.sleep(30)
 
             except Exception as e:
-                print(f"Skip video ini karena error.")
+                print_log(f"Error: Video tidak ditemukan atau gagal muat.")
             
-            # Jeda antar video (Singkat saja karena videonya pendek)
-            time.sleep(random.randint(5, 10))
+            print_log("Jeda istirahat 7 detik...")
+            time.sleep(7)
 
+    except Exception as e:
+        print_log(f"FATAL ERROR: {e}")
     finally:
-        print("\nSemua link diproses.")
+        print_log("\nSemua proses selesai. Menutup browser.")
         driver.quit()
 
 if __name__ == "__main__":
