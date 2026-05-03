@@ -1,12 +1,13 @@
-Name: Febspot Bot Manual Mode
+name: Febspot Bot Manual Mode
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     
+    # WAJIB: Izin agar GitHub bisa menjalankan ulang workflow otomatis
     permissions:
       contents: write
       actions: write
@@ -31,13 +32,13 @@ jobs:
           pip install selenium webdriver-manager
 
       - name: Run bot
-        run: python -u bot.py 
+        run: python -u bot.py # Pastikan file Python kamu namanya bot.py
 
       - name: Re-run Workflow Automatically
-        if: always() 
+        if: always() # Tetap jalankan rerun meski skrip sukses atau ada error
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Menunggu 5 menit agar sistem tidak overload..."
-          sleep 300
+          echo "Menunggu 1 menit agar sistem tidak overload..."
+          sleep 60
           gh workflow run "Febspot Bot Manual Mode"
