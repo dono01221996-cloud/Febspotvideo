@@ -39,6 +39,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Menunggu 1 menit agar sistem tidak overload..."
+          echo "Menunggu 5 menit agar sistem tidak overload..."
           sleep 300
           gh workflow run "Febspot Bot Manual Mode"
